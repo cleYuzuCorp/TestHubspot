@@ -1,19 +1,12 @@
 {
   "type": "crm-card",
   "data": {
-    "title": "Example Card",
+    "title": "Contrats",
     "uid": "get_started_card",
     "location": "crm.record.tab",
     "module": {
-      "file": "Example.jsx"
+      "file": "index.jsx"
     },
-    "objectTypes": [{ "name": "contacts" }],
-    "$.data.fetch": {
-      "method": "GET",
-      "url": "https://exemple.com/api/data",
-      "headers": {
-        "Authorization": "Bearer YOUR_API_KEY"
-      }
-    }
+    "objectTypes": [{ "name": "contacts" }]
   }
 }
