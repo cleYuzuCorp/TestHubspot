@@ -3,7 +3,7 @@
   "version": "1.0",
   "appFunctions": {
     "myFunc": {
-      "file": "example-function.js",
+      "file": "send-alert-function.js",
       "secrets": []
     }
   }

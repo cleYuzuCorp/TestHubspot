@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import {
-  Divider,
-  Link,
   Button,
   Text,
-  Input,
   Flex,
   hubspot,
   Table,
@@ -14,52 +11,65 @@ import {
   TableBody,
   TableCell,
   DateInput,
-  Alert,
+  NumberInput,
 } from "@hubspot/ui-extensions"
 
 hubspot.extend(({ context, runServerlessFunction, actions }) => (
   <Extension
     context={context}
     runServerless={runServerlessFunction}
-    sendAlert={actions.addAlert}
-  />
-))
-
-hubspot.extend(({ actions }) => (
-  <Extension
+    addAlert={actions.addAlert}
     fetchProperties={actions.fetchCrmObjectProperties}
+    openIframeModal={actions.openIframeModal}
   />
 ))
 
-const Extension = ({ context, runServerless, sendAlert, fetchProperties }) => {
-  // const [text, setText] = useState("")
+const Extension = ({ runServerless, addAlert, fetchProperties, openIframeModal }) => {
 
-  // const handleClick = () => {
-  //   runServerless({ name: "myFunc", parameters: { text: text } }).then((resp) =>
-  //     sendAlert({ message: resp.response })
-  //   )
-  // }
-
-  const [startDate, setStartDate] = useState(new Date())
-  const [startDateTemp, setStartDateTemp] = useState(new Date())
-  const [endDate, setEndDate] = useState(new Date())
-  const [endDateTemp, setEndDateTemp] = useState(new Date())
+  const [startDate, setStartDate] = useState()
+  const [startDateTemp, setStartDateTemp] = useState()
+  const [endDate, setEndDate] = useState()
+  const [endDateTemp, setEndDateTemp] = useState()
   const [price, setPrice] = useState(0)
   const [priceTemp, setPriceTemp] = useState(0)
+
   const [contracts, setContracts] = useState([])
+
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+
+  const [error, setError] = useState("")
 
   const Months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-
   useEffect(() => {
-      fetchProperties(["firstname", "lastname"])
-        .then(properties => {
-          setFirstName(properties.firstname);
-          setLastName(properties.lastname);
-      });
-  }, [fetchProperties]);
+    fetchProperties(["firstname", "lastname", "email", "createdate", "lastmodifieddate"])
+      .then(properties => {
+        setFirstName(properties.firstname)
+        setLastName(properties.lastname)
+        setEmail(properties.email)
+
+        const createDateTimestamp = properties.createdate
+        const createDate = new Date(parseInt(createDateTimestamp))
+        const createYear = createDate.getFullYear()
+        const createMonth = createDate.getMonth()
+        const createDateOfMonth = createDate.getDate()
+        const createFormattedDate = createDate.toLocaleDateString()
+        const formattedCreate = { year: createYear, month: createMonth, date: createDateOfMonth, formattedDate: createFormattedDate }
+
+        const lastModifiedDateTimestamp = properties.lastmodifieddate
+        const lastModifiedDate = new Date(parseInt(lastModifiedDateTimestamp))
+        const lastModifiedYear = lastModifiedDate.getFullYear()
+        const lastModifiedMonth = lastModifiedDate.getMonth()
+        const lastModifiedDateOfMonth = lastModifiedDate.getDate()
+        const lastModifiedFormattedDate = lastModifiedDate.toLocaleDateString()
+        const formattedLastModified = { year: lastModifiedYear, month: lastModifiedMonth, date: lastModifiedDateOfMonth, formattedDate: lastModifiedFormattedDate }
+
+        setStartDateTemp(formattedCreate)
+        setEndDateTemp(formattedLastModified)
+      })
+  }, [fetchProperties])
 
   useEffect(() => {
     setContracts(calculateContracts())
@@ -89,13 +99,26 @@ const Extension = ({ context, runServerless, sendAlert, fetchProperties }) => {
     return []
   }
 
+  const executeServerless = useCallback(() => {
+    runServerless({
+      name: "myFunc",
+    }).then((resp) => {
+      if (resp.status === 'SUCCESS') {
+        addAlert({
+          type: 'success',
+          message: 'Modification effectué avec succès !',
+        });
+      } else {
+        setError(resp.message || 'An error occurred');
+      }
+    })
+  }, [addAlert, runServerless])
+
   const handleSubmit = () => {
     setStartDate(startDateTemp)
     setEndDate(endDateTemp)
     setPrice(priceTemp)
-    runServerless({ name: "myFunc" }).then(() =>
-      sendAlert({ message: "Modification effectué avec succès !" })
-    )
+    executeServerless
   }
 
   return (
@@ -121,9 +144,10 @@ const Extension = ({ context, runServerless, sendAlert, fetchProperties }) => {
         </Flex>
 
         <Flex justify="center">
-          <Input
+          <NumberInput
             name="price"
             label="Montant du contrat"
+            min={0}
             value={priceTemp}
             onChange={(price) => {
               setPriceTemp(price)
@@ -132,12 +156,12 @@ const Extension = ({ context, runServerless, sendAlert, fetchProperties }) => {
         </Flex>
 
         <Flex justify="center">
-          <Button variant="primary" onClick={handleSubmit}>
+        <Button variant="primary" onClick={handleSubmit}>
             Enregistrer
           </Button>
         </Flex>
 
-        <Text>Hello {firstName} {lastName}</Text>
+        <Text>Hello {firstName} {lastName}, your email : {email}</Text>
 
         <Table bordered={true}>
           <TableHead>
@@ -154,46 +178,6 @@ const Extension = ({ context, runServerless, sendAlert, fetchProperties }) => {
           </TableBody>
         </Table>
       </Flex>
-
-      {/* <Text>
-        <Text format={{ fontWeight: "bold" }}>
-          Your first UI extension is ready!
-        </Text>
-        Congratulations, {context.user.firstName}! You just deployed your first
-        HubSpot UI extension. This example demonstrates how you would send
-        parameters from your React frontend to the serverless function and get a
-        response back.
-      </Text>
-      <Flex direction="row" align="end" gap="small">
-        <Input name="text" label="Send" onInput={(t) => setText(t)} />
-        <Button type="submit" onClick={handleClick}>
-          Click me
-        </Button>
-      </Flex>
-      <Divider />
-      <Text>
-        What now? Explore all available{" "}
-        <Link href="https://developers.hubspot.com/docs/platform/ui-extension-components">
-          UI components
-        </Link>
-        , get an overview of{" "}
-        <Link href="https://developers.hubspot.com/docs/platform/ui-extensions-overview">
-          UI extensions
-        </Link>
-        , learn how to{" "}
-        <Link href="https://developers.hubspot.com/docs/platform/create-ui-extensions">
-          add a new custom card
-        </Link>
-        , jump right in with our{" "}
-        <Link href="https://developers.hubspot.com/docs/platform/ui-extensions-quickstart">
-          Quickstart Guide
-        </Link>
-        , or check out our{" "}
-        <Link href="https://github.com/HubSpot/ui-extensions-react-examples">
-          code Samples
-        </Link>
-        .
-      </Text> */}
     </>
   )
 }
