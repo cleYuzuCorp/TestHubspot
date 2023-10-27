@@ -2,8 +2,12 @@
   "runtime": "nodejs16.x",
   "version": "1.0",
   "appFunctions": {
-    "myFunc": {
-      "file": "send-alert-function.js",
+    "updateContract": {
+      "file": "updateContract.js",
+      "secrets": []
+    },
+    "updateDeal": {
+      "file": "updateDeal.js",
       "secrets": []
     }
   }

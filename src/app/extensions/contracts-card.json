@@ -1,0 +1,12 @@
+{
+  "type": "crm-card",
+  "data": {
+    "title": "Contrats",
+    "uid": "contracts_card",
+    "location": "crm.record.tab",
+    "module": {
+      "file": "contracts.tsx"
+    },
+    "objectTypes": [{ "name": "contacts" }]
+  }
+}
