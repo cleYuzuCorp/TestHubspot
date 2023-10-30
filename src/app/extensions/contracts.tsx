@@ -16,7 +16,7 @@ import {
 } from "@hubspot/ui-extensions"
 
 hubspot.extend<'crm.record.tab'>(({ context, runServerlessFunction, actions }) => (
-  <Extension
+  <Contract
     context={context}
     runServerless={runServerlessFunction}
     addAlert={actions.addAlert}
@@ -24,14 +24,11 @@ hubspot.extend<'crm.record.tab'>(({ context, runServerlessFunction, actions }) =
   />
 ))
 
-const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
+const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
 
   const [startDate, setStartDate] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
-  const [startDateTemp, setStartDateTemp] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
   const [endDate, setEndDate] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
-  const [endDateTemp, setEndDateTemp] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
   const [price, setPrice] = useState(0)
-  const [priceTemp, setPriceTemp] = useState(0)
 
   const [contracts, setContracts] = useState<{ month: string, amount: number }[]>([]);
 
@@ -66,46 +63,18 @@ const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
         const lastModifiedFormattedDate = lastModifiedDate.toLocaleDateString()
         const formattedLastModified = { year: lastModifiedYear, month: lastModifiedMonth, date: lastModifiedDateOfMonth, formattedDate: lastModifiedFormattedDate }
 
-        setStartDateTemp(formattedCreate)
-        setEndDateTemp(formattedLastModified)
+        setStartDate(formattedCreate)
+        setEndDate(formattedLastModified)
       })
   }, [fetchProperties])
 
-  useEffect(() => {
-    setContracts(calculateContracts())
-  }, [startDate, endDate, price])
-
-  const calculateContracts = () => {
-    if (startDate && endDate && price) {
-      const startMonth = startDate.month
-      const startYear = startDate.year
-      const endMonth = endDate.month
-      const endYear = endDate.year
-      const contracts: { month: string, amount: number }[] = []
-
-      const totalMonths = (endYear - startYear) * 12 + (endMonth - startMonth) + 1
-      const contractAmountPerMonth = price / totalMonths
-
-      for (let year = startYear; year <= endYear; year++) {
-        const start = year === startYear ? startMonth : 0
-        const end = year === endYear ? endMonth : 11
-
-        for (let month = start; month <= end; month++) {
-          contracts.push({ month: Months[month] + ' ' + year, amount: contractAmountPerMonth })
-        }
-      }
-      return contracts
-    }
-    return []
-  }
-
-  const handleSubmit = useCallback(() => {
-    runServerless({
+  const handleSubmit = useCallback(async () => {
+    await runServerless({
       name: 'updateContract',
       parameters: {
-        startDate: startDateTemp,
-        endDate: endDateTemp,
-        price: priceTemp
+        startDate: startDate,
+        endDate: endDate,
+        price: price
       },
     }).then((resp) => {
       if (resp.status === 'SUCCESS') {
@@ -113,14 +82,21 @@ const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
           type: 'success',
           message: 'Modification effectué avec succès',
         })
-        setStartDate(startDateTemp)
-        setEndDate(endDateTemp)
-        setPrice(priceTemp)
+
+        const extractedData = resp.response.data.data
+
+        const newData = extractedData.map(item => ({
+          month: item.month || '',
+          amount: item.amount || 0,
+        }))
+
+        setContracts(newData)
       } else {
         setError(resp.message || 'An error occurred')
       }
     })
-  }, [startDateTemp, endDateTemp, priceTemp, runServerless, addAlert])
+  }, [startDate, endDate, price, runServerless, addAlert])
+
 
   if (error !== '') {
     return <Alert title="Error" variant="error" >{error}</Alert>
@@ -133,10 +109,10 @@ const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
           <DateInput
             name="start-date"
             label="Date de début de contrat"
-            value={startDateTemp}
+            value={startDate}
             onChange={(date) => {
               if (date && date.formattedDate) {
-                setStartDateTemp({
+                setStartDate({
                   year: date.year,
                   month: date.month,
                   date: date.date,
@@ -148,10 +124,10 @@ const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
           <DateInput
             name="end-date"
             label="Date de fin de contrat"
-            value={endDateTemp}
+            value={endDate}
             onChange={(date) => {
               if (date && date.formattedDate) {
-                setEndDateTemp({
+                setEndDate({
                   year: date.year,
                   month: date.month,
                   date: date.date,
@@ -167,9 +143,9 @@ const Extension = ({ context, runServerless, addAlert, fetchProperties }) => {
             name="price"
             label="Montant du contrat"
             min={0}
-            value={priceTemp}
+            value={price}
             onChange={(price) => {
-              setPriceTemp(price)
+              setPrice(price)
             }}
           />
         </Flex>

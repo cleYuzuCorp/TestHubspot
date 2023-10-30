@@ -1,9 +1,9 @@
 const axios = require('axios')
 
 exports.main = (context = {}, sendResponse) => {
-  const { dealId, dealStage } = context.parameters
+  const { contactId, name } = context.parameters
   const token = "pat-na1-35d12fcb-c3a8-4413-815c-679d2437ead0"
-  return updateDeal(token, dealId, dealStage)
+  return updateName(token, contactId, name)
     .then(() => {
       sendResponse({ status: 'success' })
     })
@@ -12,12 +12,12 @@ exports.main = (context = {}, sendResponse) => {
     })
 }
 
-const updateDeal = (token, id, stage) => {
+const updateName = (token, contactId, name) => {
   return axios.patch(
-    `https://api.hubapi.com/crm/v3/objects/deals/${id}`,
+    `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
     {
       properties: {
-        dealstage: stage,
+        lastname: name,
       },
     },
     {

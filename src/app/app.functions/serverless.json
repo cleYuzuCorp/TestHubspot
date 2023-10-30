@@ -6,8 +6,8 @@
       "file": "updateContract.js",
       "secrets": []
     },
-    "updateDeal": {
-      "file": "updateDeal.js",
+    "updateName": {
+      "file": "updateName.js",
       "secrets": []
     }
   }

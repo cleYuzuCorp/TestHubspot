@@ -6,6 +6,7 @@ import {
     Heading,
     Select,
     Button,
+    Input,
     hubspot,
 } from "@hubspot/ui-extensions"
 
@@ -22,86 +23,13 @@ hubspot.extend<'crm.record.tab'>(({ context, actions, runServerlessFunction }) =
 
 const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAlert }) => {
 
-    const [stage, setStage] = useState('contractsent')
-    const [showProperties, setShowProperties] = useState(true)
-    const [dealId, setDealId] = useState(null)
-    const [dealname, setDealname] = useState(null)
+    const [contactId, setContactId] = useState()
+    const [name, setName] = useState('')
     const [error, setError] = useState('')
-
-    const stageToPropertiesMap = {
-        appointmentscheduled: [
-            'dealname',
-            'engagements_last_meeting_booked',
-            'dealtype',
-        ],
-        qualifiedtobuy: ['hubspot_owner_id', 'amount', 'dealtype', 'hs_priority'],
-        presentationscheduled: [
-            'hs_priority',
-            'hs_deal_stage_probability',
-            'hs_forecast_amount',
-        ],
-        decisionmakerboughtin: [
-            'hs_deal_stage_probability',
-            'hs_tcv',
-            'amount',
-            'notes_last_contacted',
-        ],
-        contractsent: ['createdate', 'hs_acv', 'hs_deal_stage_probability'],
-        closedwon: ['closed_won_reason', 'closedate', 'amount'],
-        closedlost: ['closedate', 'closed_lost_reason', 'amount'],
-    }
-
-    const options = [
-        { label: 'Appointment Scheduled', value: 'appointmentscheduled' },
-        { label: 'Qualified to Buy', value: 'qualifiedtobuy' },
-        { label: 'Presentation Scheduled', value: 'presentationscheduled' },
-        { label: 'Decision Maker Bought In', value: 'decisionmakerboughtin' },
-        { label: 'Contract Sent', value: 'contractsent' },
-        { label: 'Closed Won', value: 'closedwon' },
-        { label: 'Closed Lost', value: 'closedlost' },
-    ]
-
-    useEffect(() => {
-        fetchCrmObjectProperties(['dealname', 'dealstage', 'hs_object_id']).then(
-            (properties) => {
-                setStage(properties.dealstage)
-                setDealId(properties.hs_object_id)
-                setDealname(properties.dealname)
-            }
-        )
-    }, [stage])
-
-    const handleStageChange = useCallback(
-        (newStage) => {
-            runServerless({
-                name: 'updateDeal',
-                parameters: {
-                    dealId: dealId,
-                    dealStage: newStage,
-                },
-            }).then((resp) => {
-                console.log(resp, 'resp')
-                if (resp.status === 'SUCCESS') {
-                    addAlert({
-                        type: 'success',
-                        message: 'Deal stage updated successfully',
-                    })
-                    setStage(newStage)
-                } else {
-                    setError(resp.message || 'An error occurred')
-                }
-            })
-        },
-        [dealId, addAlert, runServerless]
-    )
-
-    const handlePropertyToggle = useCallback(() => {
-        setShowProperties((current) => !current)
-    }, [])
 
     const dealContext = {
         objectTypeId: "0-3",
-        objectId: 14795354663,
+        objectId: 15843406592,
     }
 
     const associateContext = {
@@ -111,6 +39,40 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
             objectId: 769851,
         }
     }
+
+    useEffect(() => {
+        fetchCrmObjectProperties(['lastname', 'hs_object_id']).then(
+          (properties: { [propertyName: string]: any }) => {
+            setName(properties.lastname);
+            setContactId(properties.hs_object_id);
+          }
+        )
+      }, [fetchCrmObjectProperties])
+
+    const handleNameChange = useCallback(
+        (newName) => {
+            runServerless({
+                name: 'updateName',
+                parameters: {
+                    contactId: contactId,
+                    name: newName,
+                },
+            }).then((resp) => {
+                if (resp.status === 'SUCCESS') {
+                    addAlert({
+                        type: 'success',
+                        message: 'Name updated successfully',
+                    })
+                    setName(newName)
+                } else {
+                    setError(resp.message || 'An error occurred')
+                }
+            })
+        },
+        [contactId, name, addAlert, runServerless]
+    )
+
+    console.log(name, "name")
 
     if (error !== '') {
         return <Alert title="Error" variant="error">{error}</Alert>
@@ -122,7 +84,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                 <Flex direction="column" gap="md">
                     <Heading>Pivot d'association</Heading>
                     <CrmAssociationPivot
-                        objectTypeId="contact"
+                        objectTypeId="0-3"
                         maxAssociations={10}
                     />
                 </Flex>
@@ -142,37 +104,21 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                     />
                 </Flex>
 
-                {/* <Flex direction="column" gap="md">
+                <Flex direction="column" gap="md">
                     <Heading>Rapport</Heading>
-                    <CrmReport reportId="6339949" />
-                </Flex> */}
+                    <CrmReport reportId="103423286" />
+                </Flex>
 
                 <Flex direction="column" gap="md">
-                    <Heading>Suivi de scène</Heading>
-
-                    <Text>Deal status : {dealname}</Text>
-
-                    <Flex justify="center" align="end" gap="md">
-                        <Select
-                            label="Update Deal Stage"
-                            name="deal-stage"
-                            tooltip="Please choose"
-                            value={stage}
-                            onChange={handleStageChange}
-                            options={options}
-                        />
-
-                        <Button
-                            variant={showProperties ? 'primary' : 'secondary'}
-                            onClick={handlePropertyToggle}
-                        >
-                            {showProperties ? 'Hide' : 'Show'} Properties
-                        </Button>
-                    </Flex>
+                    <Heading>Suivi de Transaction</Heading>
 
                     <CrmStageTracker
-                        properties={stageToPropertiesMap[stage || '']}
-                        showProperties={showProperties}
+                        objectId="15843406592"
+                        objectTypeId="0-3"
+                        properties={[
+                        'dealname',
+                        'amount',
+                        ]}
                     />
                 </Flex>
 
@@ -213,7 +159,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                                 actionType: "PREVIEW_OBJECT",
                                 actionContext: {
                                     objectTypeId: "0-3",
-                                    objectId: 14795354663
+                                    objectId: 15843406592
                                 },
                                 tooltipText: "Preview this deal record."
                             },
@@ -226,8 +172,8 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                                         label: "Send email",
                                         actionType: "SEND_EMAIL",
                                         actionContext: {
-                                            objectTypeId: "0-1",
-                                            objectId: 769851
+                                            objectTypeId: "0-3",
+                                            objectId: 15843406592
                                         }
                                     },
                                     {
@@ -235,8 +181,8 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                                         label: "Add note",
                                         actionType: "ADD_NOTE",
                                         actionContext: {
-                                            objectTypeId: "0-1",
-                                            objectId: 769851
+                                            objectTypeId: "0-3",
+                                            objectId: 15843406592
                                         },
                                     }
                                 ]
@@ -249,7 +195,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                             actionType="ADD_NOTE"
                             actionContext={{
                                 objectTypeId: "0-3",
-                                objectId: 123456
+                                objectId: 15843406592
                             }}
                             variant="secondary"
                         >
@@ -260,7 +206,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                             actionType="SEND_EMAIL"
                             actionContext={{
                                 objectTypeId: "0-3",
-                                objectId: 123456
+                                objectId: 15843406592
                             }}
                             variant="secondary"
                         >
@@ -270,8 +216,8 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                         <CrmActionButton
                             actionType="SCHEDULE_MEETING"
                             actionContext={{
-                                objectTypeId: '0-1',
-                                objectId: 123456
+                                objectTypeId: '0-3',
+                                objectId: 15843406592
                             }}
                         >
                             Schedule meeting
@@ -283,7 +229,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                                 objectTypeId: '0-2',
                                 association: {
                                     objectTypeId: '0-1',
-                                    objectId: 123456
+                                    objectId: 15843406592
                                 }
                             }}
                         >
@@ -293,9 +239,9 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                         <CrmActionButton
                             actionType="ENGAGEMENT_APP_LINK"
                             actionContext={{
-                                objectTypeId: "0-2",
-                                objectId: 2763710643,
-                                engagementId: 39361694368
+                                objectTypeId: "0-3",
+                                objectId: 15843406592,
+                                engagementId: 41962521245
                             }}
                             variant="secondary"
                         >
@@ -305,8 +251,8 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                         <CrmActionButton
                             actionType="RECORD_APP_LINK"
                             actionContext={{
-                                objectTypeId: "0-2",
-                                objectId: 2763710643,
+                                objectTypeId: "0-3",
+                                objectId: 15843406592,
                                 includeEschref: true
                             }}
                             variant="secondary"
@@ -314,6 +260,17 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                             View company
                         </CrmActionButton>
                     </Flex>
+                </Flex>
+
+                <Flex direction="column" gap="md">
+                    <Heading>Modification d'un contact</Heading>
+
+                    <Input 
+                        name="name"
+                        label="Nom du contact"
+                        value={name}
+                        onChange={handleNameChange}
+                    />
                 </Flex>
             </Flex >
         </>
