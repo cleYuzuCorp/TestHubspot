@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react"
 import {
-    Text,
     Alert,
     Flex,
     Heading,
-    Select,
-    Button,
     Input,
     hubspot,
 } from "@hubspot/ui-extensions"
-
 import { CrmAssociationPivot, CrmDataHighlight, CrmPropertyList, CrmReport, CrmStageTracker, CrmActionButton, CrmActionLink, CrmCardActions } from '@hubspot/ui-extensions/crm'
 
 hubspot.extend<'crm.record.tab'>(({ context, actions, runServerlessFunction }) => (
@@ -21,7 +17,7 @@ hubspot.extend<'crm.record.tab'>(({ context, actions, runServerlessFunction }) =
     />
 ))
 
-const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAlert }) => {
+const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAlert }: { context: any, runServerless: any, addAlert: any, fetchCrmObjectProperties: any }) => {
 
     const [contactId, setContactId] = useState()
     const [name, setName] = useState('')
@@ -42,22 +38,22 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
 
     useEffect(() => {
         fetchCrmObjectProperties(['lastname', 'hs_object_id']).then(
-          (properties: { [propertyName: string]: any }) => {
-            setName(properties.lastname);
-            setContactId(properties.hs_object_id);
-          }
+            (properties: { [propertyName: string]: any }) => {
+                setName(properties.lastname)
+                setContactId(properties.hs_object_id)
+            }
         )
-      }, [fetchCrmObjectProperties])
+    }, [fetchCrmObjectProperties])
 
     const handleNameChange = useCallback(
-        (newName) => {
+        (newName: React.SetStateAction<string>) => {
             runServerless({
                 name: 'updateName',
                 parameters: {
                     contactId: contactId,
                     name: newName,
                 },
-            }).then((resp) => {
+            }).then((resp: { status: string; message: string }) => {
                 if (resp.status === 'SUCCESS') {
                     addAlert({
                         type: 'success',
@@ -116,8 +112,8 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                         objectId="15843406592"
                         objectTypeId="0-3"
                         properties={[
-                        'dealname',
-                        'amount',
+                            'dealname',
+                            'amount',
                         ]}
                     />
                 </Flex>
@@ -265,7 +261,7 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
                 <Flex direction="column" gap="md">
                     <Heading>Modification d'un contact</Heading>
 
-                    <Input 
+                    <Input
                         name="name"
                         label="Nom du contact"
                         value={name}

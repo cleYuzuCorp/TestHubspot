@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, SetStateAction } from "react"
 import {
   Alert,
   Button,
@@ -20,17 +20,17 @@ hubspot.extend<'crm.record.tab'>(({ context, runServerlessFunction, actions }) =
     context={context}
     runServerless={runServerlessFunction}
     addAlert={actions.addAlert}
-    fetchProperties={actions.fetchCrmObjectProperties}
+    fetchCrmObjectProperties={actions.fetchCrmObjectProperties}
   />
 ))
 
-const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
+const Contract = ({ context, runServerless, addAlert, fetchCrmObjectProperties }: { context: any, runServerless: any, addAlert: any, fetchCrmObjectProperties: any }) => {
 
   const [startDate, setStartDate] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
   const [endDate, setEndDate] = useState({ year: 0, month: 0, date: 0, formattedDate: "" })
   const [price, setPrice] = useState(0)
 
-  const [contracts, setContracts] = useState<{ month: string, amount: number }[]>([]);
+  const [contracts, setContracts] = useState<{ month: string, amount: number }[]>([])
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -38,11 +38,9 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
 
   const [error, setError] = useState("")
 
-  const Months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-
   useEffect(() => {
-    fetchProperties(["firstname", "lastname", "email", "createdate", "lastmodifieddate"])
-      .then(properties => {
+    fetchCrmObjectProperties(["firstname", "lastname", "email", "createdate", "lastmodifieddate"])
+      .then((properties: { firstname: SetStateAction<string>; lastname: SetStateAction<string>; email: SetStateAction<string>; createdate: string; lastmodifieddate: string }) => {
         setFirstName(properties.firstname)
         setLastName(properties.lastname)
         setEmail(properties.email)
@@ -66,7 +64,16 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
         setStartDate(formattedCreate)
         setEndDate(formattedLastModified)
       })
-  }, [fetchProperties])
+
+    runServerless({
+      name: 'getTable',
+      parameters: {
+        contracts: contracts
+      }
+    }).then((resp: any) => {
+      console.log(resp)
+    })
+  }, [fetchCrmObjectProperties])
 
   const handleSubmit = useCallback(async () => {
     await runServerless({
@@ -76,7 +83,7 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
         endDate: endDate,
         price: price
       },
-    }).then((resp) => {
+    }).then((resp: { status: string; response: { data: { data: any } }; message: string }) => {
       if (resp.status === 'SUCCESS') {
         addAlert({
           type: 'success',
@@ -85,7 +92,7 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
 
         const extractedData = resp.response.data.data
 
-        const newData = extractedData.map(item => ({
+        const newData = extractedData.map((item: { month: any; amount: number }) => ({
           month: item.month || '',
           amount: item.amount || 0,
         }))
@@ -117,7 +124,7 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
                   month: date.month,
                   date: date.date,
                   formattedDate: date.formattedDate
-                });
+                })
               }
             }}
           />
@@ -132,7 +139,7 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
                   month: date.month,
                   date: date.date,
                   formattedDate: date.formattedDate
-                });
+                })
               }
             }}
           />
@@ -157,6 +164,7 @@ const Contract = ({ context, runServerless, addAlert, fetchProperties }) => {
         </Flex>
 
         <Text>Hello {firstName} {lastName}, your email : {email}</Text>
+        <Text>Tables :</Text>
 
         <Table bordered={true}>
           <TableHead>
