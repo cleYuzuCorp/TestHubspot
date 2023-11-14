@@ -39,30 +39,47 @@ const Contract = ({ context, runServerless, addAlert, fetchCrmObjectProperties }
   const [error, setError] = useState("")
 
   useEffect(() => {
-    fetchCrmObjectProperties(["firstname", "lastname", "email", "createdate", "lastmodifieddate"])
-      .then((properties: { firstname: SetStateAction<string>; lastname: SetStateAction<string>; email: SetStateAction<string>; createdate: string; lastmodifieddate: string }) => {
+    fetchCrmObjectProperties(["firstname", "lastname", "email"])
+      .then((properties: { firstname: SetStateAction<string>; lastname: SetStateAction<string>; email: SetStateAction<string>; startDate: string; endDate: string }) => {
         setFirstName(properties.firstname)
         setLastName(properties.lastname)
         setEmail(properties.email)
+      })
 
-        const createDateTimestamp = properties.createdate
-        const createDate = new Date(parseInt(createDateTimestamp))
-        const createYear = createDate.getFullYear()
-        const createMonth = createDate.getMonth()
-        const createDateOfMonth = createDate.getDate()
-        const createFormattedDate = createDate.toLocaleDateString()
-        const formattedCreate = { year: createYear, month: createMonth, date: createDateOfMonth, formattedDate: createFormattedDate }
+      runServerless({
+        name: 'getLastContract',
+        parameters: {
+          contracts: contracts
+        },
+      }).then((resp: { status: string; response: { data: { results: any[] }}; message: any }) => {
+        if (resp.status === 'SUCCESS') {
+          const results = resp.response.data.results
+          if (results && results.length > 0) {
+            const lastContract = results[results.length - 1]
 
-        const lastModifiedDateTimestamp = properties.lastmodifieddate
-        const lastModifiedDate = new Date(parseInt(lastModifiedDateTimestamp))
-        const lastModifiedYear = lastModifiedDate.getFullYear()
-        const lastModifiedMonth = lastModifiedDate.getMonth()
-        const lastModifiedDateOfMonth = lastModifiedDate.getDate()
-        const lastModifiedFormattedDate = lastModifiedDate.toLocaleDateString()
-        const formattedLastModified = { year: lastModifiedYear, month: lastModifiedMonth, date: lastModifiedDateOfMonth, formattedDate: lastModifiedFormattedDate }
-
-        setStartDate(formattedCreate)
-        setEndDate(formattedLastModified)
+            const startDateTimestamp = lastContract.values.start_date
+            const startDate = new Date(parseInt(startDateTimestamp))
+            const createYear = startDate.getUTCFullYear()
+            const createMonth = startDate.getUTCMonth()
+            const startDateOfMonth = startDate.getUTCDate()
+            const createFormattedDate = startDate.toLocaleDateString()
+            const formattedCreate = { year: createYear, month: createMonth, date: startDateOfMonth, formattedDate: createFormattedDate }
+    
+            const endDateTimestamp = lastContract.values.end_date
+            const endDate = new Date(parseInt(endDateTimestamp))
+            const lastModifiedYear = endDate.getUTCFullYear()
+            const lastModifiedMonth = endDate.getUTCMonth()
+            const endDateOfMonth = endDate.getUTCDate()
+            const lastModifiedFormattedDate = endDate.toLocaleDateString()
+            const formattedLastModified = { year: lastModifiedYear, month: lastModifiedMonth, date: endDateOfMonth, formattedDate: lastModifiedFormattedDate }
+    
+            setStartDate(formattedCreate)
+            setEndDate(formattedLastModified)
+            setPrice(lastContract.values.price)
+          }
+        } else {
+          setError(resp.message || 'An error occurred')
+        }
       })
   }, [fetchCrmObjectProperties])
 
@@ -70,11 +87,14 @@ const Contract = ({ context, runServerless, addAlert, fetchCrmObjectProperties }
     await runServerless({
       name: 'updateContract',
       parameters: {
+        startDay: startDate.date,
+        endDay: endDate.date,
         startDate: startDate,
         endDate: endDate,
         price: price
       },
     }).then((resp: { status: string; response: { data: { data: any } }; message: string }) => {
+
       if (resp.status === 'SUCCESS') {
         addAlert({
           type: 'success',

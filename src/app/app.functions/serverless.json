@@ -9,6 +9,10 @@
     "updateName": {
       "file": "updateName.js",
       "secrets": []
+    },
+    "getLastContract": {
+      "file": "getLastContract.js",
+      "secrets": []
     }
   }
 }

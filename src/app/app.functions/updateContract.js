@@ -1,10 +1,10 @@
 const axios = require('axios')
 
 exports.main = (context = {}, sendResponse) => {
-  const { startDate, endDate, price } = context.parameters
+  const { startDay, endDay, startDate, endDate, price } = context.parameters
   const token = "pat-na1-35d12fcb-c3a8-4413-815c-679d2437ead0"
 
-  return updateContract(token, startDate, endDate, price)
+  return updateContract(token, startDay, endDay, startDate, endDate, price)
     .then((data) => {
       sendResponse({ status: 'success', data: { data } })
     })
@@ -13,7 +13,7 @@ exports.main = (context = {}, sendResponse) => {
     })
 }
 
-const updateContract = (token, startDate, endDate, price) => {
+const updateContract = (token, startDay, endDay, startDate, endDate, price) => {
   return new Promise((resolve, reject) => {
     const Months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 
@@ -23,8 +23,8 @@ const updateContract = (token, startDate, endDate, price) => {
       const endMonth = endDate.month
       const endYear = endDate.year
 
-      const startTimestamp = new Date(startYear, startMonth, 1).getTime()
-      const endTimestamp = new Date(endYear, endMonth, 1).getTime()
+      const startTimestamp = new Date(startYear, startMonth, startDay).getTime()
+      const endTimestamp = new Date(endYear, endMonth, endDay).getTime()
       
       const contracts = []
 
