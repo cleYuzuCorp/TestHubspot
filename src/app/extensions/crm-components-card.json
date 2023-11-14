@@ -1,11 +1,11 @@
 {
   "type": "crm-card",
   "data": {
-    "title": "Contrats",
-    "uid": "get_started_card",
+    "title": "CRM Components",
+    "uid": "crm_components_card",
     "location": "crm.record.tab",
     "module": {
-      "file": "index.jsx"
+      "file": "crm-components.tsx"
     },
     "objectTypes": [{ "name": "contacts" }]
   }
