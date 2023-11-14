@@ -64,15 +64,6 @@ const Contract = ({ context, runServerless, addAlert, fetchCrmObjectProperties }
         setStartDate(formattedCreate)
         setEndDate(formattedLastModified)
       })
-
-    runServerless({
-      name: 'getTable',
-      parameters: {
-        contracts: contracts
-      }
-    }).then((resp: any) => {
-      console.log(resp)
-    })
   }, [fetchCrmObjectProperties])
 
   const handleSubmit = useCallback(async () => {

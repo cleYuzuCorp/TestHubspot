@@ -68,8 +68,6 @@ const CRMComponents = ({ context, runServerless, fetchCrmObjectProperties, addAl
         [contactId, name, addAlert, runServerless]
     )
 
-    console.log(name, "name")
-
     if (error !== '') {
         return <Alert title="Error" variant="error">{error}</Alert>
     }

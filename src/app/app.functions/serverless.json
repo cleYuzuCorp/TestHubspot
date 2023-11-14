@@ -9,10 +9,6 @@
     "updateName": {
       "file": "updateName.js",
       "secrets": []
-    },
-    "getTable": {
-      "file": "getTable.js",
-      "secrets": []
     }
   }
 }

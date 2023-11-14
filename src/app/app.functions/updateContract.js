@@ -1,7 +1,10 @@
+const axios = require('axios')
+
 exports.main = (context = {}, sendResponse) => {
   const { startDate, endDate, price } = context.parameters
+  const token = "pat-na1-35d12fcb-c3a8-4413-815c-679d2437ead0"
 
-  return updateContract(startDate, endDate, price)
+  return updateContract(token, startDate, endDate, price)
     .then((data) => {
       sendResponse({ status: 'success', data: { data } })
     })
@@ -10,7 +13,7 @@ exports.main = (context = {}, sendResponse) => {
     })
 }
 
-const updateContract = (startDate, endDate, price) => {
+const updateContract = (token, startDate, endDate, price) => {
   return new Promise((resolve, reject) => {
     const Months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 
@@ -19,6 +22,10 @@ const updateContract = (startDate, endDate, price) => {
       const startYear = startDate.year
       const endMonth = endDate.month
       const endYear = endDate.year
+
+      const startTimestamp = new Date(startYear, startMonth, 1).getTime()
+      const endTimestamp = new Date(endYear, endMonth, 1).getTime()
+      
       const contracts = []
 
       const totalMonths = (endYear - startYear) * 12 + (endMonth - startMonth) + 1
@@ -33,7 +40,24 @@ const updateContract = (startDate, endDate, price) => {
         }
       }
 
-      return resolve(contracts)
+      return axios.post(
+        `https://api.hubapi.com/cms/v3/hubdb/tables/7410851/rows`,
+        {
+          values: {
+            start_date: startTimestamp,
+            end_date: endTimestamp,
+            price: price
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      ).then(() => {
+        return resolve(contracts)
+      })
     } else {
       return reject(new Error('Invalid input data'))
     }
